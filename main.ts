@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Plugin, PluginSettingTab, SearchComponent, Setting, moment } from 'obsidian';
+import { App, TFile, FuzzyMatch, FuzzySuggestModal, MarkdownView, Notice, Plugin, PluginSettingTab, Setting, moment, sortSearchResults, prepareSimpleSearch } from 'obsidian';
 import { NoteCommandRegistry } from 'note_commands/command_registry';
 import { NewNoteCommand } from 'note_commands/new_note_command';
 
@@ -19,15 +19,6 @@ export default class MyPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.addRibbonIcon('refresh-ccw', 'Reload', (evt: MouseEvent) => {
-			const pluginManager = this.app.plugins;
-
-			pluginManager.disablePlugin("sample-plugin");
-			pluginManager.enablePlugin("sample-plugin");
-
-			new Notice("Reloaded");
-		});
-
 		this.noteCommands = new NoteCommandRegistry(
 			{
 				vault: this.app.vault,
@@ -39,30 +30,45 @@ export default class MyPlugin extends Plugin {
 		)
 		this.noteCommands.registerCommand(NewNoteCommand);
 
-		const isSearchPluginEnabled = this.app.internalPlugins.getEnabledPluginById("global-search");
+		this.addRibbonIcon('search', 'Search plugin', async () => {
+			const notes: Map<string, TFile> = new Map();
+			this.app.vault.getMarkdownFiles().forEach(async (note) => {
 
-		if (isSearchPluginEnabled) {
-			this.addCommand({
-				id: 'open-search-modal',
-				name: 'Search modal window',
-				callback: () => {
-					new SearchModal(this.app).open();
+				const text = await this.app.vault.cachedRead(note);
+				notes.set(text, note);
+			});
+
+			new NotesSuggester(
+				this.app,
+				notes,
+				"Search notes to open...",
+				undefined,
+				(file) => {
+					//this.app.workspace.getLeaf().openFile(file);
+					const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+					// Make sure the user is editing a Markdown file.
+					if (view) {
+						const cursor = view.editor.getCursor();
+						view.editor.replaceRange(
+							this.app.fileManager.generateMarkdownLink(file, file.path),
+							cursor,
+						)
+					}
 				}
-			});
+			).open();
+		});
 
-			this.addRibbonIcon('search', 'Search plugin', () => {
-				new SearchModal(this.app).open();
-			});
+		// this.addSettingTab(new SampleSettingTab(this.app, this));
 
-			// this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addRibbonIcon('refresh-ccw', 'Reload', (evt: MouseEvent) => {
+			const pluginManager = this.app.plugins;
 
-		} else {
-			new Notice("Please enable the search core plugin!");
-		}
+			pluginManager.disablePlugin("sample-plugin");
+			pluginManager.enablePlugin("sample-plugin");
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+			new Notice("Reloaded");
+		});
 	}
 
 	onunload() {
@@ -78,38 +84,99 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SearchModal extends Modal {
-	constructor(app: App) {
+class NotesSuggester extends FuzzySuggestModal<string> {
+	private notes: Map<string, TFile>;
+	private completion: (file: TFile) => void;
+	private initialQuery: string;
+
+	constructor(
+		app: App,
+		notes: Map<string, TFile>,
+		placeholder: string | undefined,
+		initialQuery: string | undefined,
+		completion: (file: TFile) => void
+	) {
 		super(app);
+		this.initialQuery = initialQuery ?? "";
+		this.notes = notes;
+		this.completion = completion;
+		this.emptyStateText = "No zettels found";
+		placeholder = placeholder ?? "";
+		this.setPlaceholder(`${placeholder} (first 3 symbols will not trigger)`);
 	}
 
-	async onOpen() {
-		const { contentEl } = this;
-
-		contentEl.empty();
-
-		new SearchComponent(contentEl)
-			// TODO debounce
-			.onChange(startSearch);
+	onOpen() {
+		super.onOpen();
+		this.inputEl.value = this.initialQuery;
+		const event = new Event("input");
+		this.inputEl.dispatchEvent(event);
 	}
 
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
+
+	getItems(): string[] {
+		return Array.from(this.notes.keys());
 	}
-}
 
-function startSearch(query: string): void {
-	const searchLeaf = this.app.workspace.getLeavesOfType('search')[0].view;
-	console.log(query)
+	getItemText(item: string): string {
+		return item;
+	}
 
-	searchLeaf.setQuery(query);
+	getSuggestions(query: string): FuzzyMatch<string>[] {
+		if (query.length <= 3) {
+			return [];
+		}
+		query = query.trim();
+		for (
+			var initialItems = this.getItems(),
+			//n = prepareQuery(query), 
+			executeSearch = prepareSimpleSearch(query),
+			results = [],
+			index = 0;
+			index < initialItems.length;
+			index++
+		) {
+			var item = initialItems[index]
+				//, s = fuzzySearch(n, this.getItemText(a));
+				, searchResult = executeSearch(this.getItemText(item));
+			searchResult && results.push({
+				match: searchResult,
+				item: item
+			})
+		}
+		return sortSearchResults(results),
+			results
+	}
 
-	const results = searchLeaf.dom.resultDomLookup;
+	renderSuggestion(value: FuzzyMatch<string>, el: HTMLElement) {
+		el.setText(value.item);
 
-	console.log(results);
-	// this.app.fileManager.generateMarkdownLink(cFile, cFile.path)
+		const matches = value.match.matches;
+		if (matches == null || matches.length == 0) {
+			return;
+		}
+		const text = el.firstChild;
+		if (text == null) {
+			return;
+		}
 
+		// can't for loop over matches
+		// because first loop will slice element
+		// if would be second loop
+		// it probably will not find correct offset
+		// will end up with error
+		const start = matches[0][0];
+		const end = matches[0][1];
+
+		const range = new Range();
+
+		range.setStart(text, start);
+		range.setEnd(text, end);
+		range.surroundContents(document.createElement("b"));
+	}
+
+	onChooseItem(item: string, evt: MouseEvent | KeyboardEvent) {
+		this.completion(this.notes.get(item)!);
+	}
 }
 
 class SampleSettingTab extends PluginSettingTab {
