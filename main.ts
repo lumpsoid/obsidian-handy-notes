@@ -1,4 +1,4 @@
-import { App, TFile, Notice, Plugin, PluginSettingTab, Setting, SuggestModal } from 'obsidian';
+import { App, FuzzyMatch, FuzzySuggestModal, TFile, Notice, Plugin, PluginSettingTab, Setting, MarkdownView, sortSearchResults, prepareSimpleSearch } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
@@ -16,27 +16,36 @@ export default class MyPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		const isSearchPluginEnabled = this.app.internalPlugins.getEnabledPluginById("global-search");
+		this.addRibbonIcon('search', 'Search plugin', async () => {
+			const notes: Map<string, TFile> = new Map();
+			this.app.vault.getMarkdownFiles().forEach(async (note) => {
 
-		if (isSearchPluginEnabled) {
-			this.addCommand({
-				id: 'open-search-modal',
-				name: 'Search modal window',
-				callback: () => {
-					new SearchModal(this.app).open();
+				const text = await this.app.vault.cachedRead(note);
+				notes.set(text, note);
+			});
+
+			new NotesSuggester(
+				this.app,
+				notes,
+				"Search notes to open...",
+				undefined,
+				(file) => {
+					//this.app.workspace.getLeaf().openFile(file);
+					const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+					// Make sure the user is editing a Markdown file.
+					if (view) {
+						const cursor = view.editor.getCursor();
+						view.editor.replaceRange(
+							this.app.fileManager.generateMarkdownLink(file, file.path),
+							cursor,
+						)
+					}
 				}
-			});
+			).open();
+		});
 
-			this.addRibbonIcon('search', 'Search plugin', () => {
-				new SearchModal(this.app).open();
-			});
-
-			// this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		} else {
-			new Notice("Please enable the search core plugin!");
-		}
-
+		// this.addSettingTab(new SampleSettingTab(this.app, this));
 
 		this.addRibbonIcon('refresh-ccw', 'Reload', (evt: MouseEvent) => {
 			const pluginManager = this.app.plugins;
@@ -61,104 +70,99 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-interface NoteResult {
-	file: TFile,
-	representation: string
-}
+class NotesSuggester extends FuzzySuggestModal<string> {
+	private notes: Map<string, TFile>;
+	private completion: (file: TFile) => void;
+	private initialQuery: string;
 
-function removeFields(obj: Record<string, any>, ...fieldsToRemove: string[]) {
-	// Destructure the object and omit the specified fields
-	const { [fieldsToRemove[0]]: _, [fieldsToRemove[1]]: __, ...rest } = obj;
-
-	// Return the remaining fields
-	return rest;
-}
-
-class SearchModal extends SuggestModal<NoteResult> {
-	private abortController: AbortController | null = null;
-
-	constructor(app: App) {
+	constructor(
+		app: App,
+		notes: Map<string, TFile>,
+		placeholder: string | undefined,
+		initialQuery: string | undefined,
+		completion: (file: TFile) => void
+	) {
 		super(app);
+		this.initialQuery = initialQuery ?? "";
+		this.notes = notes;
+		this.completion = completion;
+		this.emptyStateText = "No zettels found";
+		placeholder = placeholder ?? "";
+		this.setPlaceholder(`${placeholder} (first 3 symbols will not trigger)`);
 	}
 
-	async onOpen() {
-		const { contentEl } = this;
-
-		contentEl.empty();
-
+	onOpen() {
+		super.onOpen();
+		this.inputEl.value = this.initialQuery;
+		const event = new Event("input");
+		this.inputEl.dispatchEvent(event);
 	}
 
-	getSuggestions(query: string): NoteResult[] | Promise<NoteResult[]> {
-		if (this.abortController) {
-			// Cancel the previous search
-			this.abortController.abort();
+
+	getItems(): string[] {
+		return Array.from(this.notes.keys());
+	}
+
+	getItemText(item: string): string {
+		return item;
+	}
+
+	getSuggestions(query: string): FuzzyMatch<string>[] {
+		if (query.length <= 3) {
+			return [];
+		}
+		query = query.trim();
+		for (
+			var initialItems = this.getItems(),
+			//n = prepareQuery(query), 
+			executeSearch = prepareSimpleSearch(query),
+			results = [],
+			index = 0;
+			index < initialItems.length;
+			index++
+		) {
+			var item = initialItems[index]
+				//, s = fuzzySearch(n, this.getItemText(a));
+				, searchResult = executeSearch(this.getItemText(item));
+			searchResult && results.push({
+				match: searchResult,
+				item: item
+			})
+		}
+		return sortSearchResults(results),
+			results
+	}
+
+	renderSuggestion(value: FuzzyMatch<string>, el: HTMLElement) {
+		el.setText(value.item);
+
+		const matches = value.match.matches;
+		if (matches == null || matches.length == 0) {
+			return;
+		}
+		const text = el.firstChild;
+		if (text == null) {
+			return;
 		}
 
-		// Create a new AbortController for the current search
-		this.abortController = new AbortController();
+		// can't for loop over matches
+		// because first loop will slice element
+		// if would be second loop
+		// it probably will not find correct offset
+		// will end up with error
+		const start = matches[0][0];
+		const end = matches[0][1];
 
-		return searchAndGetResults(this.app, query, this.abortController.signal);
+		const range = new Range();
+
+		range.setStart(text, start);
+		range.setEnd(text, end);
+		range.surroundContents(document.createElement("b"));
 	}
-	renderSuggestion(value: NoteResult, el: HTMLElement) {
-		el.appendText(value.representation);
+
+	onChooseItem(item: string, evt: MouseEvent | KeyboardEvent) {
+		this.completion(this.notes.get(item)!);
 	}
-
-	onChooseSuggestion(item: NoteResult, evt: MouseEvent | KeyboardEvent) {
-		evt.preventDefault();
-		console.log(evt);
-		this.app.workspace.getLeaf().openFile(item.file);
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
-
-
-async function searchAndGetResults(app: App, query: string, signal: AbortSignal): Promise<NoteResult[]> {
-	const searchLeaf = app.workspace.getLeavesOfType('search')[0].view;
-	console.log(query);
-
-	// Set the query
-	searchLeaf.setQuery(query);
-	searchLeaf.startSearch();
-
-	// Return a promise that resolves when the search completes
-	return new Promise((resolve, reject) => {
-		// Check the search status every second
-		const intervalId = setInterval(() => {
-			// Check if the operation was aborted
-			if (signal.aborted) {
-				clearInterval(intervalId);
-				console.log('Search was aborted.');
-				reject(new Error('Search was aborted.'));
-				return;
-			}
-
-			const searchRunning = searchLeaf.dom.working;
-
-			if (!searchRunning) {
-				// Stop the interval
-				clearInterval(intervalId);
-
-				// Retrieve the search results
-				const results = searchLeaf.dom.resultDomLookup;
-				console.log(results);
-
-				// Transform results into NoteResult[]
-				const resultsAsNoteResults: NoteResult[] = Array.from(results.entries()).map(([file, representation]) => {
-					// Assuming file is of type TFile and representation is a string
-					// Remove unwanted fields from file if necessary
-					const cleanedFile = removeFields(file, 'saving', 'deleted') as TFile;
-					return { file: cleanedFile, representation: representation.content };
-				});
-
-
-				resolve(resultsAsNoteResults);
-			}
-		}, 1000); // Check every 1000 milliseconds (1 second)
-	});
 }
 
 class SampleSettingTab extends PluginSettingTab {
