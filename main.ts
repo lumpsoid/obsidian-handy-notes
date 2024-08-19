@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Plugin, PluginSettingTab, SearchComponent, Setting } from 'obsidian';
+import { App, TFile, Notice, Plugin, PluginSettingTab, Setting, SuggestModal } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
@@ -38,13 +38,13 @@ export default class MyPlugin extends Plugin {
 		}
 
 
-		this.addRibbonIcon('refresh-ccw', 'Reload', (evt: MouseEvent) => {   
+		this.addRibbonIcon('refresh-ccw', 'Reload', (evt: MouseEvent) => {
 			const pluginManager = this.app.plugins;
 
-			pluginManager.disablePlugin("sample-plugin");   
+			pluginManager.disablePlugin("sample-plugin");
 			pluginManager.enablePlugin("sample-plugin");
 
-			new Notice("Reloaded");  
+			new Notice("Reloaded");
 		});
 	}
 
@@ -61,7 +61,22 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SearchModal extends Modal {
+interface NoteResult {
+	file: TFile,
+	representation: string
+}
+
+function removeFields(obj: Record<string, any>, ...fieldsToRemove: string[]) {
+	// Destructure the object and omit the specified fields
+	const { [fieldsToRemove[0]]: _, [fieldsToRemove[1]]: __, ...rest } = obj;
+
+	// Return the remaining fields
+	return rest;
+}
+
+class SearchModal extends SuggestModal<NoteResult> {
+	private abortController: AbortController | null = null;
+
 	constructor(app: App) {
 		super(app);
 	}
@@ -71,9 +86,27 @@ class SearchModal extends Modal {
 
 		contentEl.empty();
 
-		new SearchComponent(contentEl)
-			// TODO debounce
-			.onChange(startSearch);
+	}
+
+	getSuggestions(query: string): NoteResult[] | Promise<NoteResult[]> {
+		if (this.abortController) {
+			// Cancel the previous search
+			this.abortController.abort();
+		}
+
+		// Create a new AbortController for the current search
+		this.abortController = new AbortController();
+
+		return searchAndGetResults(this.app, query, this.abortController.signal);
+	}
+	renderSuggestion(value: NoteResult, el: HTMLElement) {
+		el.appendText(value.representation);
+	}
+
+	onChooseSuggestion(item: NoteResult, evt: MouseEvent | KeyboardEvent) {
+		evt.preventDefault();
+		console.log(evt);
+		this.app.workspace.getLeaf().openFile(item.file);
 	}
 
 	onClose() {
@@ -82,17 +115,50 @@ class SearchModal extends Modal {
 	}
 }
 
-function startSearch(query: string): void {
-	const searchLeaf = this.app.workspace.getLeavesOfType('search')[0].view;
-	console.log(query)
 
+async function searchAndGetResults(app: App, query: string, signal: AbortSignal): Promise<NoteResult[]> {
+	const searchLeaf = app.workspace.getLeavesOfType('search')[0].view;
+	console.log(query);
+
+	// Set the query
 	searchLeaf.setQuery(query);
+	searchLeaf.startSearch();
 
-	const results = searchLeaf.dom.resultDomLookup;
+	// Return a promise that resolves when the search completes
+	return new Promise((resolve, reject) => {
+		// Check the search status every second
+		const intervalId = setInterval(() => {
+			// Check if the operation was aborted
+			if (signal.aborted) {
+				clearInterval(intervalId);
+				console.log('Search was aborted.');
+				reject(new Error('Search was aborted.'));
+				return;
+			}
 
-	console.log(results);
-	// this.app.fileManager.generateMarkdownLink(cFile, cFile.path)
+			const searchRunning = searchLeaf.dom.working;
 
+			if (!searchRunning) {
+				// Stop the interval
+				clearInterval(intervalId);
+
+				// Retrieve the search results
+				const results = searchLeaf.dom.resultDomLookup;
+				console.log(results);
+
+				// Transform results into NoteResult[]
+				const resultsAsNoteResults: NoteResult[] = Array.from(results.entries()).map(([file, representation]) => {
+					// Assuming file is of type TFile and representation is a string
+					// Remove unwanted fields from file if necessary
+					const cleanedFile = removeFields(file, 'saving', 'deleted') as TFile;
+					return { file: cleanedFile, representation: representation.content };
+				});
+
+
+				resolve(resultsAsNoteResults);
+			}
+		}, 1000); // Check every 1000 milliseconds (1 second)
+	});
 }
 
 class SampleSettingTab extends PluginSettingTab {
