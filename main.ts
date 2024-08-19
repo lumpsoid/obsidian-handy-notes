@@ -1,3 +1,5 @@
+import { NoteCommandRegistry } from 'note_commands/command_registry';
+import { NewNoteCommand } from 'note_commands/new_note_command';
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, moment, SearchComponent, Setting } from 'obsidian';
 import { join } from 'path';
 
@@ -13,6 +15,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
+	noteCommands: NoteCommandRegistry;
 
 	async onload() {
 		await this.loadSettings();
@@ -50,81 +53,18 @@ setTimeout(() => {clearInterval(itervalID);}, 5000)
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		// const statusBarItemEl = this.addStatusBarItem();
 		// statusBarItemEl.setText('Status Bar Text');
-
-		this.addCommand({
-			id: 'simple-my-editor-1',
-			name: '11',
-			editorCallback: async (editor: Editor) => {
-				const parentFile = this.app.workspace.getActiveFile();
-				if (parentFile === null) return;
-				const parentFileLink = this.app.fileManager.generateMarkdownLink(parentFile, parentFile.path);
-
-				let fileTitleNew; // add as setting
-				let contentNew; // add as setting
-				let tagLineNew = "#tag"; // add as setting
-
-				const cursorFrom = editor.getCursor("from");
-				const cursorTo = editor.getCursor("to");
-				const lineCurrent = editor
-					.getLine(cursorFrom.line)
-					.trimEnd();
-				
-				// TODO add processing of where to put new link
-				// after or berfore text on the line
-				let lineNew;
-
-				// multi line selection
-				if (cursorFrom.line != cursorTo.line) {
-					const selectedText = editor.getSelection().split('\n');
-					editor.replaceRange(
-						'',
-						cursorFrom,
-						cursorTo,
-					);
-					fileTitleNew = selectedText[0];
-					contentNew = selectedText
-						.slice(1)
-						.join('\n');
-					lineNew = `${lineCurrent} $timestamp`;
-
-				// single line selection
-				} else if (cursorFrom.ch != cursorTo.ch) {
-					fileTitleNew = editor.getSelection().trim();
-					contentNew = "- ";
-					lineNew = lineCurrent.replace(fileTitleNew, `${fileTitleNew} $timestamp`)
-
-				// without selection
-				// like if (cursorFrom.ch == cursorTo.ch) 
-				} else {
-					fileTitleNew = lineCurrent.replace(/^\s*(-\s)?/,'');;
-					contentNew = "- ";
-					lineNew = `${lineCurrent} $timestamp`;
-				}
-
-				const cursorMarker = '$|';
-
-				const timestampTemplate = "YYYYMMDDHHmmss"; // add as settings
-				const timestamp = moment().format(timestampTemplate);
-				const fileNameNew = `${timestamp}.md`
-				const fileContent = `# ${fileTitleNew}\n${tagLineNew}${cursorMarker}\n${contentNew}\n- ${parentFileLink}` // read from user's template
-
-				const placeholderOffset = fileContent.indexOf(cursorMarker);
-				const fileContentFinal = fileContent.replace(cursorMarker, '');
-
-				const fileNew = await this.app.vault.create(fileNameNew, fileContentFinal);
-				const fileLinkNew = this.app.fileManager.generateMarkdownLink(fileNew, fileNew.path);
-
-				editor.setLine(
-					cursorFrom.line,
-					lineNew.replace('$timestamp', fileLinkNew),
-				);
-
-				// editor.getLine
-				await this.app.workspace.getLeaf().openFile(fileNew);
-
-				editor.setCursor(editor.offsetToPos(placeholderOffset));
+		//
+		this.noteCommands = new NoteCommandRegistry(
+			{
+				vault: this.app.vault,
+				workspace: this.app.workspace,
+				fileManager: this.app.fileManager,
+				moment: moment(),
 			},
-		});
+			this.addCommand.bind(this),
+		)
+		this.noteCommands.registerCommand(NewNoteCommand);
+
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
