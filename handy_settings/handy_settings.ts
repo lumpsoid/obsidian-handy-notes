@@ -1,9 +1,6 @@
 import HandyNotesPlugin from 'main';
 import { PluginSettingTab, App, Setting } from 'obsidian';
 
-export interface HandyPluginSettings {
-	mySetting: string;
-}
 
 export class HandySettingTab extends PluginSettingTab {
 	plugin: HandyNotesPlugin;

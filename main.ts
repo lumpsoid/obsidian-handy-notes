@@ -2,8 +2,8 @@ import { TFile, MarkdownView, Notice, Plugin, moment } from 'obsidian';
 import { NoteActionsRegistry } from 'note_commands/command_registry';
 import { NewNoteCreationAction } from 'note_commands/new_note_creation_action';
 import { NotesSuggester } from 'notes_search/notes_search';
-import { HandyPluginSettings, HandySettingTab } from 'handy_settings/handy_settings';
-import { DEFAULT_SETTINGS } from 'handy_settings/default_settings';
+import { HandySettingTab } from 'handy_settings/handy_settings';
+import { DEFAULT_SETTINGS, HandyPluginSettings } from 'handy_settings/default_settings';
 
 export default class HandyNotesPlugin extends Plugin {
 	settings: HandyPluginSettings;
