@@ -1,10 +1,10 @@
 import { Command } from "obsidian";
-import { BaseNoteCommand } from "./base_note_command";
+import { BaseNoteAction } from "./base_note_action";
 import { Env } from "./env";
 
 
-export class NoteCommandRegistry {
-    private commands: Map<string, BaseNoteCommand> = new Map();
+export class NoteActionsRegistry {
+    private actions: Map<string, BaseNoteAction> = new Map();
 
 	public env: Env;
 	private pluginAddCommand: (command: Command) => Command;
@@ -18,18 +18,18 @@ export class NoteCommandRegistry {
     }
 
 	// Register a command by creating it with the provided Env instance
-    registerCommand(CommandClass: new () => BaseNoteCommand) {
+    registerCommand(CommandClass: new () => BaseNoteAction) {
         const commandInstance = new CommandClass();
 
-		this.pluginAddCommand(commandInstance.create(this.env));
+		this.pluginAddCommand(commandInstance.command(this.env));
 
-        this.commands.set(
+        this.actions.set(
 			commandInstance.getCommandId(),
 			commandInstance,
 		);
     }
-    getCommand(id: string): BaseNoteCommand | undefined {
-        return this.commands.get(id);
+    getAction(id: string): BaseNoteAction | undefined {
+        return this.actions.get(id);
     }
 }
 

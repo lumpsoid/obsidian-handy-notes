@@ -1,18 +1,18 @@
 import { Editor, Command, } from "obsidian";
-import { BaseNoteCommand } from "./base_note_command";
+import { BaseNoteAction } from "./base_note_action";
 import { Env } from "./env";
 
-export class NewNoteCommand extends BaseNoteCommand {
+export class NewNoteCreationAction extends BaseNoteAction {
 	constructor() {super()}
 
 	getCommandId(): string {
-		return 'note-creator-command';
+		return 'new-note-creation-action';
 	}
 	getCommandName(): string {
 		return '11';
 	}
-	// Command
-	create(env: Env): Command {
+
+	command(env: Env): Command {
 		return {
 			id: this.getCommandId(),
 			name: this.getCommandName(),

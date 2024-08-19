@@ -2,12 +2,12 @@ import { Editor, Command } from "obsidian";
 import { Env } from "./env";
 
 
-export abstract class BaseNoteCommand {
+export abstract class BaseNoteAction {
 	constructor() { };
 
 	public abstract getCommandId(): string;
 	public abstract getCommandName(): string;
-	public abstract create(env: Env): Command;
+	public abstract command(env: Env): Command;
 
     protected getCursorMarkers(editor: Editor) {
         const cursorFrom = editor.getCursor("from");
