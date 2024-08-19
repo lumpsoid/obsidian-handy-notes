@@ -22,7 +22,31 @@
 		obsidian
       ];
       shellHook = ''
-		tmux -L "obsidian-zettelflow"
+		session="obsidian-zettelflow"
+        sessioExist=$(tmux list-sessions | grep $session)
+
+        if [ "$sessioExist" != "" ]; then
+            tmux kill-session -t $session
+        fi
+        window=0
+
+		#tmux -L $session # make it able to inherit the shell variable
+
+        tmux new-session -d -s $session
+
+        tmux set -g mouse on
+        tmux set -g mouse-select-window on
+
+		tmux send-keys -t $session 'npm run dev' C-m
+
+        tmux split-window -h -t $session
+		tmux send-keys -t $session 'obsidian' C-m
+
+		tmux new-window
+		tmux send-keys -t $session 'nvim ./main.ts' C-m
+
+        tmux attach-session -t $session
+
       '';
     };
 
