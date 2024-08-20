@@ -30,8 +30,8 @@ export function insertLinkOnCursorSafe(editor: Editor, link: string): void {
 	let resultLink = [];
 	const cursor = editor.getCursor();
 	const currentLine = editor.getLine(cursor.line);
-	const symbolLeft = currentLine.at(cursor.ch - 1)
-	const symbolRight = currentLine.at(cursor.ch)
+	const symbolLeft = currentLine.charAt(cursor.ch - 1)
+	const symbolRight = currentLine.charAt(cursor.ch)
 
 	if (symbolLeft !== ' ') resultLink.push(' ');
 	resultLink.push(link);
