@@ -6,7 +6,7 @@ import {
 
 export class SimpleNotesSearch extends SuggestModal<string> {
 	private notes: Promise<Map<string, TFile>>;
-	private completion: (file: TFile) => void;
+	private completion: (file: TFile, noteContent: string) => void;
 	private initialQuery: string;
 	private abortController: AbortController | null = null;
 	private currentQuery: string;
@@ -16,10 +16,9 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 		notes: Promise<Map<string, TFile>>,
 		placeholder: string | undefined,
 		initialQuery: string | undefined,
-		completion: (file: TFile) => void
+		completion: (file: TFile, noteContent: string) => void
 	) {
-		super(app);
-		this.initialQuery = initialQuery ?? "";
+		super(app); this.initialQuery = initialQuery ?? "";
 		this.notes = notes;
 		this.completion = completion;
 		this.emptyStateText = "No zettels found";
@@ -107,6 +106,6 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 
 	async onChooseSuggestion(item: string, evt: MouseEvent | KeyboardEvent) {
 		const notes = await this.notes;
-		this.completion(notes.get(item)!);
+		this.completion(notes.get(item)!, item);
 	}
 }
