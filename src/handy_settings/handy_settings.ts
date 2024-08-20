@@ -25,5 +25,19 @@ export class HandySettingTab extends PluginSettingTab {
 					this.plugin.settings.mySetting = value;
 					await this.plugin.saveSettings();
 				}));
+		new Setting(containerEl)
+			.setName('File name on creation')
+			.setDesc('Choose you filename when creating a file')
+			.addTextArea((text) => {
+				text
+					.setPlaceholder("Example: {{date:YYYYMMDDHHmm}}{{titleNew}}")
+					.setValue(this.plugin.settings.fileNameTemplate || '')
+					.onChange(async (value) => {
+						this.plugin.settings.fileNameTemplate = value;
+						await this.plugin.saveSettings();
+					});
+				text.inputEl.rows = 2;
+				text.inputEl.cols = 25;
+			});
 	}
 }
