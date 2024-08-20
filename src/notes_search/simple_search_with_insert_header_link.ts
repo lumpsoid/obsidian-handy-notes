@@ -1,27 +1,27 @@
 import { App, Command, Editor, Notice } from "obsidian";
 import { BaseSearch } from "./base_search";
-import { SimpleNotesSearch } from "./modals/simple_notes_search";
 import { getAllNotesWithContent, getEditor, insertLinkOnCursorSafe } from "../utils";
+import { SimpleNotesSearch } from "./modals/simple_notes_search";
 
-export class SimpleSearchWithInsertLink extends BaseSearch {
-	static COMMAND_ID: string = 'simple-search-with-insert-link';
+export class SimpleSearchWithInsertHeaderLink extends BaseSearch {
+	static COMMAND_ID: string = 'simple-search-with-insert-header-link';
 
 	public getSearchId(): string {
-		return SimpleSearchWithInsertLink.COMMAND_ID;
+		return SimpleSearchWithInsertHeaderLink.COMMAND_ID;
 	}
 	public getSearchName(): string {
-		return 'Simple search with insert link'
+		return 'Simple search with insert link and header';
 	}
 	public getSearchIcon(): string {
-		return 'link'
+		return 'external-link';
 	}
 	public command(app: App): Command {
 		return {
 			id: this.getSearchId(),
 			name: this.getSearchName(),
 			icon: this.getSearchIcon(),
-			editorCallback: (editor) => {
-				this.action(app, editor);
+			editorCallback: () => {
+				this.action(app);
 			},
 		};
 	};
@@ -47,9 +47,10 @@ export class SimpleSearchWithInsertLink extends BaseSearch {
 			getAllNotesWithContent(app),
 			"Search notes to insert a link...",
 			undefined,
-			(file) => {
+			(file, noteContent) => {
 				const markdownLink = app.fileManager.generateMarkdownLink(file, file.path);
-				insertLinkOnCursorSafe(editor!, markdownLink);
+				const header = noteContent.split('\n')[0].replace('#', '').trim();
+				insertLinkOnCursorSafe(editor!, `${markdownLink} ${header}`);
 			}
 		).open();
 	}

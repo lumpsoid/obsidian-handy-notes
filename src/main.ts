@@ -1,4 +1,4 @@
-import { Plugin, moment } from 'obsidian';
+import { Plugin, Notice } from 'obsidian';
 import { NoteActionRegistry } from 'note_commands/command_registry';
 import { NewNoteCreationAction } from 'note_commands/new_note_creation_action';
 import { HandySettingTab } from 'handy_settings/handy_settings';
@@ -6,6 +6,7 @@ import { DEFAULT_SETTINGS, HandyPluginSettings } from 'handy_settings/default_se
 import { SearchRegistry } from 'notes_search/search_registry';
 import { SimpleSearchWithInsertLink } from 'notes_search/simple_with_insert_link_search';
 import { SimpleSearchWithOpenFile } from 'notes_search/simple_with_open_search';
+import { SimpleSearchWithInsertHeaderLink } from 'notes_search/simple_search_with_insert_header_link';
 
 export default class HandyNotesPlugin extends Plugin {
 	settings: HandyPluginSettings;
@@ -21,7 +22,6 @@ export default class HandyNotesPlugin extends Plugin {
 				vault: this.app.vault,
 				workspace: this.app.workspace,
 				fileManager: this.app.fileManager,
-				moment: moment(),
 			},
 			this.addCommand.bind(this),
 		);
@@ -35,20 +35,24 @@ export default class HandyNotesPlugin extends Plugin {
 		);
 
 		this.searchRegistry.registerCommand(SimpleSearchWithOpenFile);
-		this.searchRegistry.registerRibbonIcon(SimpleSearchWithInsertLink);
+		this.searchRegistry.registerRibbonIcon(SimpleSearchWithOpenFile);
+
+		this.searchRegistry.registerCommand(SimpleSearchWithInsertLink);
+
+		this.searchRegistry.registerCommand(SimpleSearchWithInsertHeaderLink);
 
 		this.addSettingTab(new HandySettingTab(this.app, this));
 
 		// for easy debug
 		// will create ribbon icon for plugin reload
-		// this.addRibbonIcon('refresh-ccw', 'Reload', () => {
-		// 	const pluginManager = this.app.plugins;
+		this.addRibbonIcon('refresh-ccw', 'Reload', () => {
+			const pluginManager = this.app.plugins;
 
-		// 	pluginManager.disablePlugin("sample-plugin");
-		// 	pluginManager.enablePlugin("sample-plugin");
+			pluginManager.disablePlugin("obsidian-handy-notes");
+			pluginManager.enablePlugin("obsidian-handy-notes");
 
-		// 	new Notice("Reloaded");
-		// });
+			new Notice("Reloaded");
+		});
 	}
 
 	onunload() {

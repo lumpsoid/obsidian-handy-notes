@@ -24,7 +24,7 @@ export class NoteActionRegistry {
 		this.pluginAddCommand(commandInstance.command(this.env));
 
         this.actions.set(
-			commandInstance.getCommandId(),
+			commandInstance.getActionId(),
 			commandInstance,
 		);
     }

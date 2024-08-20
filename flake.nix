@@ -43,7 +43,7 @@
 		tmux send-keys -t $session 'obsidian' C-m
 
 		tmux new-window
-		tmux send-keys -t $session 'nvim ./main.ts' C-m
+		tmux send-keys -t $session 'nvim ./src/main.ts' C-m
 
         tmux attach-session -t $session
 
