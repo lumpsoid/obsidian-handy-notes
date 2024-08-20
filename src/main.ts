@@ -1,4 +1,4 @@
-import { Plugin, moment, Notice } from 'obsidian';
+import { Plugin, Notice } from 'obsidian';
 import { NoteActionRegistry } from 'note_commands/command_registry';
 import { NewNoteCreationAction } from 'note_commands/new_note_creation_action';
 import { HandySettingTab } from 'handy_settings/handy_settings';
@@ -22,7 +22,6 @@ export default class HandyNotesPlugin extends Plugin {
 				vault: this.app.vault,
 				workspace: this.app.workspace,
 				fileManager: this.app.fileManager,
-				moment: moment(),
 			},
 			this.addCommand.bind(this),
 		);

@@ -1,22 +1,27 @@
-import { Editor, Command, } from "obsidian";
+import { Editor, Command, moment } from "obsidian";
 import { BaseNoteAction } from "./base_note_action";
 import { Env } from "./env";
 
 export class NewNoteCreationAction extends BaseNoteAction {
 
-	getCommandId(): string {
+	getActionId(): string {
 		return 'new-note-creation-action';
 	}
-	getCommandName(): string {
+	getActionName(): string {
 		return 'Create new note with template';
+	}
+
+	getActionIcon(): string {
+		return 'git-branch-plus';
 	}
 
 	command(env: Env): Command {
 		return {
-			id: this.getCommandId(),
-			name: this.getCommandName(),
+			id: this.getActionId(),
+			name: this.getActionName(),
+			icon: this.getActionIcon(),
 			editorCallback: async (editor: Editor) => {
-					await this.action(env, editor);
+				await this.action(env, editor);
 			},
 		};
 	};
@@ -39,6 +44,17 @@ export class NewNoteCreationAction extends BaseNoteAction {
 		// TODO add processing of where to put new link
 		// after or berfore text on the line
 		let lineNew = `$timestamp ${lineCurrent}`;
+
+		const match = lineCurrent.match(/^(\s*[-\s]*)/);
+		if (match) {
+			// Extract leading whitespace and symbols
+			const leadingPart = match[1];
+			// Remove the leading part from the line to get the actual content
+			const contentPart = lineCurrent.substring(leadingPart.length);
+
+			// Create the new line with timestamp prepended
+			lineNew = `${leadingPart}$timestamp ${contentPart}`;
+		}
 
 		// multi line selection
 		if (cursorFrom.line != cursorTo.line) {
@@ -67,7 +83,8 @@ export class NewNoteCreationAction extends BaseNoteAction {
 		const cursorMarker = '$|';
 
 		const timestampTemplate = "YYYYMMDDHHmmss"; // add as settings
-		const timestamp = env.moment.format(timestampTemplate);
+		const timestamp = moment().format(timestampTemplate);
+		console.log(timestamp);
 		const fileNameNew = `${timestamp}.md`
 		const fileContent = `# ${fileTitleNew}\n${tagLineNew}\n${contentNew}${cursorMarker}\n- ${parentFileLink}` // read from user's template
 
