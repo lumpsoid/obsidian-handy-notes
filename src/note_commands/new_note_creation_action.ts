@@ -30,6 +30,7 @@ export class NewNoteCreationAction extends BaseNoteAction {
 		const parentFile = env.workspace.getActiveFile();
 		if (parentFile === null) return;
 		const parentFileLink = env.fileManager.generateMarkdownLink(parentFile, parentFile.path);
+		const parentHeader = editor.getLine(0).replace('#', '').trim();
 
 		let fileTitleNew; // add as setting
 		let contentNew = '- '; // add as setting
@@ -86,7 +87,7 @@ export class NewNoteCreationAction extends BaseNoteAction {
 		const timestamp = moment().format(timestampTemplate);
 		console.log(timestamp);
 		const fileNameNew = `${timestamp}.md`
-		const fileContent = `# ${fileTitleNew}\n${tagLineNew}\n${contentNew}${cursorMarker}\n- ${parentFileLink}` // read from user's template
+		const fileContent = `# ${fileTitleNew}\n${tagLineNew}\n${contentNew}${cursorMarker}\n- ${parentFileLink} ${parentHeader}` // read from user's template
 
 		const placeholderOffset = fileContent.indexOf(cursorMarker);
 		const fileContentFinal = fileContent.replace(cursorMarker, '');
