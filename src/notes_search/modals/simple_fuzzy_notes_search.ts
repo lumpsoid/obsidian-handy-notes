@@ -7,10 +7,11 @@ import {
 	sortSearchResults 
 } from 'obsidian';
 
-export class SimpleNotesSearch extends FuzzySuggestModal<string> {
+export class SimpleFuzzyNotesSearch extends FuzzySuggestModal<string> {
 	private notes: Map<string, TFile>;
 	private completion: (file: TFile) => void;
 	private initialQuery: string;
+	private abortController: AbortController | null = null;
 
 	constructor(
 		app: App,
@@ -33,6 +34,7 @@ export class SimpleNotesSearch extends FuzzySuggestModal<string> {
 		this.inputEl.value = this.initialQuery;
 		const event = new Event("input");
 		this.inputEl.dispatchEvent(event);
+		console.log("we here?");
 	}
 
 
@@ -45,9 +47,18 @@ export class SimpleNotesSearch extends FuzzySuggestModal<string> {
 	}
 
 	getSuggestions(query: string): FuzzyMatch<string>[] {
+		console.log("got query: ", query);
 		if (query.length <= 3) {
 			return [];
 		}
+
+		if (this.abortController) {
+			this.abortController.abort();
+		}
+
+		this.abortController = new AbortController();
+		const signal = this.abortController.signal;
+
 		query = query.trim();
 		for (
 			var initialItems = this.getItems(),
@@ -58,6 +69,11 @@ export class SimpleNotesSearch extends FuzzySuggestModal<string> {
 			index < initialItems.length;
 			index++
 		) {
+			if (signal.aborted) {
+				console.log("query was aborted: ", query);
+				return results;
+			}
+
 			var item = initialItems[index]
 				//, s = fuzzySearch(n, this.getItemText(a));
 				, searchResult = executeSearch(this.getItemText(item));
@@ -66,6 +82,7 @@ export class SimpleNotesSearch extends FuzzySuggestModal<string> {
 				item: item
 			})
 		}
+		console.log("query completed: ", query);
 		return sortSearchResults(results),
 			results
 	}

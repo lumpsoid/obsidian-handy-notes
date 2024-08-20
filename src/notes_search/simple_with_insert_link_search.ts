@@ -1,6 +1,6 @@
 import { App, Command, Editor, Notice } from "obsidian";
 import { BaseSearch } from "./base_search";
-import { SimpleNotesSearch } from "./simple_notes_search";
+import { SimpleNotesSearch } from "./modals/simple_notes_search";
 import { getAllNotesWithContent, getEditor, insertLinkOnCursorSafe } from "../utils";
 
 export class SimpleSearchWithInsertLink extends BaseSearch {
@@ -38,10 +38,9 @@ export class SimpleSearchWithInsertLink extends BaseSearch {
 				return;
 			}
 		}
-		const notes = await getAllNotesWithContent(app);
 		new SimpleNotesSearch(
 			app,
-			notes,
+			getAllNotesWithContent(app),
 			"Search notes to insert a link...",
 			undefined,
 			(file) => {

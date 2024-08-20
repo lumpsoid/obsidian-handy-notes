@@ -1,7 +1,7 @@
 import { App, Command } from "obsidian";
 import { BaseSearch } from "./base_search";
-import { SimpleNotesSearch } from "./simple_notes_search";
 import { getAllNotesWithContent } from "../utils";
+import { SimpleNotesSearch } from "./modals/simple_notes_search";
 
 export class SimpleSearchWithOpenFile extends BaseSearch {
 	static COMMAND_ID: string = 'simple-with-open-search';
@@ -31,10 +31,9 @@ export class SimpleSearchWithOpenFile extends BaseSearch {
 		return [icon, title, callback];
 	}
 	public async action(app: App): Promise<void> {
-		const notes = await getAllNotesWithContent(app);
 		new SimpleNotesSearch(
 			app,
-			notes,
+			getAllNotesWithContent(app),
 			"Search notes to open...",
 			undefined,
 			(file) => {
