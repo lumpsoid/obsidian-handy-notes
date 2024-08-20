@@ -12,17 +12,21 @@ export class SimpleSearchWithInsertLink extends BaseSearch {
 	public getSearchName(): string {
 		return 'Simple search with insert link'
 	}
+	public getSearchIcon(): string {
+		return 'link'
+	}
 	public command(app: App): Command {
 		return {
 			id: this.getSearchId(),
 			name: this.getSearchName(),
+			icon: this.getSearchIcon(),
 			editorCallback: (editor) => {
 				this.action(app, editor);
 			},
 		};
 	};
 	public ribbonIcon(app: App): [string, string, (evt: MouseEvent) => any] {
-		const icon = 'link';
+		const icon = this.getSearchIcon();
 		const title = this.getSearchName();
 		const callback = () => {
 			this.action(app);

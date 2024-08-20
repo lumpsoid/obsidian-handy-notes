@@ -6,6 +6,7 @@ export abstract class BaseSearch {
 
 	public abstract getSearchId(): string;
 	public abstract getSearchName(): string;
+	public abstract getSearchIcon(): string;
 	public abstract command(app: App): Command;
 	public abstract ribbonIcon(app: App): [string, string, (evt: MouseEvent) => any];
 	public abstract action(app: App, editor: Editor): void;

@@ -12,17 +12,21 @@ export class SimpleSearchWithOpenFile extends BaseSearch {
 	public getSearchName(): string {
 		return 'Simple search with open file'
 	}
+	public getSearchIcon(): string {
+		return 'external-link'
+	}
 	public command(app: App): Command {
 		return {
 			id: this.getSearchId(),
 			name: this.getSearchName(),
+			icon: this.getSearchIcon(),
 			editorCallback: () => {
 				this.action(app);
 			},
 		};
 	};
 	public ribbonIcon(app: App): [string, string, (evt: MouseEvent) => any] {
-		const icon = 'external-link';
+		const icon = this.getSearchIcon();
 		const title = this.getSearchName();
 		const callback = () => {
 			this.action(app);
