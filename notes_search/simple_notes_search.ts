@@ -7,7 +7,7 @@ import {
 	sortSearchResults 
 } from 'obsidian';
 
-export class NotesSuggester extends FuzzySuggestModal<string> {
+export class SimpleNotesSearch extends FuzzySuggestModal<string> {
 	private notes: Map<string, TFile>;
 	private completion: (file: TFile) => void;
 	private initialQuery: string;

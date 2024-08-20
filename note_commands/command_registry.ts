@@ -3,7 +3,7 @@ import { BaseNoteAction } from "./base_note_action";
 import { Env } from "./env";
 
 
-export class NoteActionsRegistry {
+export class NoteActionRegistry {
     private actions: Map<string, BaseNoteAction> = new Map();
 
 	public env: Env;

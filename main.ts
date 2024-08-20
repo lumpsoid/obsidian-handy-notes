@@ -1,18 +1,22 @@
-import { TFile, MarkdownView, Notice, Plugin, moment } from 'obsidian';
-import { NoteActionsRegistry } from 'note_commands/command_registry';
+import { Plugin, moment } from 'obsidian';
+import { NoteActionRegistry } from 'note_commands/command_registry';
 import { NewNoteCreationAction } from 'note_commands/new_note_creation_action';
-import { NotesSuggester } from 'notes_search/notes_search';
 import { HandySettingTab } from 'handy_settings/handy_settings';
 import { DEFAULT_SETTINGS, HandyPluginSettings } from 'handy_settings/default_settings';
+import { SearchRegistry } from 'notes_search/search_registry';
+import { SimpleSearchWithInsertLink } from 'notes_search/simple_with_insert_link_search';
+import { SimpleSearchWithOpenFile } from 'notes_search/simple_with_open_search';
 
 export default class HandyNotesPlugin extends Plugin {
 	settings: HandyPluginSettings;
-	noteActions: NoteActionsRegistry;
+	noteActionRegistry: NoteActionRegistry;
+	searchRegistry: SearchRegistry;
 
 	async onload() {
 		await this.loadSettings();
 
-		this.noteActions = new NoteActionsRegistry(
+		// note actions
+		this.noteActionRegistry = new NoteActionRegistry(
 			{
 				vault: this.app.vault,
 				workspace: this.app.workspace,
@@ -21,47 +25,30 @@ export default class HandyNotesPlugin extends Plugin {
 			},
 			this.addCommand.bind(this),
 		);
-		this.noteActions.registerCommand(NewNoteCreationAction);
+		this.noteActionRegistry.registerCommand(NewNoteCreationAction);
 
-		this.addRibbonIcon('search', 'Search plugin', async () => {
-			const notes: Map<string, TFile> = new Map();
-			this.app.vault.getMarkdownFiles().forEach(async (note) => {
+		// search actions
+		this.searchRegistry = new SearchRegistry(
+			this.app,
+			this.addCommand.bind(this),
+			this.addRibbonIcon.bind(this),
+		);
 
-				const text = await this.app.vault.cachedRead(note);
-				notes.set(text, note);
-			});
-
-			new NotesSuggester(
-				this.app,
-				notes,
-				"Search notes to open...",
-				undefined,
-				(file) => {
-					//this.app.workspace.getLeaf().openFile(file);
-					const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-
-					// Make sure the user is editing a Markdown file.
-					if (view) {
-						const cursor = view.editor.getCursor();
-						view.editor.replaceRange(
-							this.app.fileManager.generateMarkdownLink(file, file.path),
-							cursor,
-						)
-					}
-				}
-			).open();
-		});
+		this.searchRegistry.registerCommand(SimpleSearchWithOpenFile);
+		this.searchRegistry.registerRibbonIcon(SimpleSearchWithInsertLink);
 
 		this.addSettingTab(new HandySettingTab(this.app, this));
 
-		this.addRibbonIcon('refresh-ccw', 'Reload', (evt: MouseEvent) => {
-			const pluginManager = this.app.plugins;
+		// for easy debug
+		// will create ribbon icon for plugin reload
+		// this.addRibbonIcon('refresh-ccw', 'Reload', () => {
+		// 	const pluginManager = this.app.plugins;
 
-			pluginManager.disablePlugin("sample-plugin");
-			pluginManager.enablePlugin("sample-plugin");
+		// 	pluginManager.disablePlugin("sample-plugin");
+		// 	pluginManager.enablePlugin("sample-plugin");
 
-			new Notice("Reloaded");
-		});
+		// 	new Notice("Reloaded");
+		// });
 	}
 
 	onunload() {
