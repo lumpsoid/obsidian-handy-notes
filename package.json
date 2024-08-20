@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-zettelflow",
-	"version": "1.0.0",
-	"description": "WIP",
+	"name": "obsidian-handy-notes",
+	"version": "0.2.0",
+	"description": "Handy commands for writting flow",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
