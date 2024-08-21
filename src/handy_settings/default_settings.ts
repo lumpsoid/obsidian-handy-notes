@@ -1,9 +1,16 @@
-export const DEFAULT_SETTINGS: HandyPluginSettings = {
-	mySetting: 'default',
-	fileNameTemplate: '{{date:YYYYMMDDHHmmss}}',
+export interface HandyPluginSettings {
+	fileNameTemplate: string;
+	lineParentNoteTemplate: string;
+	fileNewTemplate: string;
+	parentHeaderOnLine: number,
+	contentNewTemplate: string;
 }
 
-export interface HandyPluginSettings {
-	mySetting: string;
-	fileNameTemplate: string;
+export const DEFAULT_SETTINGS: HandyPluginSettings = {
+	fileNameTemplate: '{{date:YYYYMMDDHHmmss}}',
+	fileNewTemplate: '',
+	contentNewTemplate: '',
+	lineParentNoteTemplate: '',
+	parentHeaderOnLine: 0,
 }
+

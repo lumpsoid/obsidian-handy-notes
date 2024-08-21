@@ -1,12 +1,13 @@
 import { Plugin, Notice } from 'obsidian';
-import { NoteActionRegistry } from 'note_commands/command_registry';
-import { NewNoteCreationAction } from 'note_commands/new_note_creation_action';
-import { HandySettingTab } from 'handy_settings/handy_settings';
 import { DEFAULT_SETTINGS, HandyPluginSettings } from 'handy_settings/default_settings';
+import { HandySettingTab } from 'handy_settings/handy_settings';
 import { SearchRegistry } from 'notes_search/search_registry';
 import { SimpleSearchWithInsertLink } from 'notes_search/simple_with_insert_link_search';
 import { SimpleSearchWithOpenFile } from 'notes_search/simple_with_open_search';
 import { SimpleSearchWithInsertHeaderLink } from 'notes_search/simple_search_with_insert_header_link';
+import { NoteActionRegistry } from 'note_commands/command_registry';
+import { NewNoteWithoutOpenAction } from 'note_commands/new_note_without_open_action';
+import { NewNoteWithOpenAction } from 'note_commands/new_note_with_open_action';
 
 export default class HandyNotesPlugin extends Plugin {
 	settings: HandyPluginSettings;
@@ -22,10 +23,13 @@ export default class HandyNotesPlugin extends Plugin {
 				vault: this.app.vault,
 				workspace: this.app.workspace,
 				fileManager: this.app.fileManager,
+				settings: this.settings,
 			},
 			this.addCommand.bind(this),
 		);
-		this.noteActionRegistry.registerCommand(NewNoteCreationAction);
+		this.noteActionRegistry.registerCommand(NewNoteWithOpenAction);
+
+		this.noteActionRegistry.registerCommand(NewNoteWithoutOpenAction);
 
 		// search actions
 		this.searchRegistry = new SearchRegistry(
