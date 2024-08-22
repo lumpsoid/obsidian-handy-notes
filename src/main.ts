@@ -30,10 +30,24 @@ export default class HandyNotesPlugin extends Plugin {
 			addCommand: this.addCommand.bind(this),
 			addRibbonIcon: this.addRibbonIcon.bind(this),
 		});
-		this.noteActionRegistry.registerCommand(NewNoteWithOpenAction);
-		this.noteActionRegistry.registerCommand(NewNoteWithoutOpenAction);
-		this.noteActionRegistry.registerCommand(AddLinkToNote);
-		this.noteActionRegistry.registerRibbonIcon(AddLinkToNote);
+		this.noteActionRegistry.registerActions(
+			[
+				{
+					Action: NewNoteWithOpenAction,
+					asCommand: true,
+					asRibbonIcon: true,
+				},
+				{
+					Action: NewNoteWithoutOpenAction,
+					asCommand: true,
+				},
+				{
+					Action: AddLinkToNote,
+					asCommand: true,
+					asRibbonIcon: true,
+				},
+			],
+		);
 
 		// search actions
 		this.searchRegistry = new SearchRegistry(

@@ -12,6 +12,12 @@ interface ActionRegistryOptions {
 	) => HTMLElement;
 }
 
+interface ActionRegistration {
+	Action: new () => BaseNoteAction;
+	asCommand?: boolean;
+	asRibbonIcon?: boolean;
+}
+
 export class NoteActionRegistry {
 	private actions: Map<string, BaseNoteAction> = new Map();
 
@@ -35,16 +41,16 @@ export class NoteActionRegistry {
 	getAction(id: string): BaseNoteAction | undefined {
 		return this.actions.get(id);
 	}
-	getActionOrCreate(actionClass: new () => BaseNoteAction): BaseNoteAction {
+	getActionOrCreate(ActionClass: new () => BaseNoteAction): BaseNoteAction {
 		let action = this.getAction(BaseNoteAction.COMMAND_ID);
 		if (action === undefined) {
-			action = new actionClass();
+			action = new ActionClass();
 		}
 		return action;
 	}
 	// Register a command by creating it with the provided Env instance
-	registerCommand(CommandClass: new () => BaseNoteAction) {
-		const action = this.getActionOrCreate(CommandClass);
+	registerCommand(ActionClass: new () => BaseNoteAction) {
+		const action = this.getActionOrCreate(ActionClass);
 
 		this.pluginAddCommand(action.command(this.env));
 
@@ -53,14 +59,43 @@ export class NoteActionRegistry {
 			action,
 		);
 	}
-	registerRibbonIcon(CommandClass: new () => BaseNoteAction) {
-		const action = this.getActionOrCreate(CommandClass);
+	registerRibbonIcon(ActionClass: new () => BaseNoteAction) {
+		const action = this.getActionOrCreate(ActionClass);
 		this.pluginAddRibbonIcon(...action.ribbonIcon(this.env));
 
 		this.actions.set(
 			action.getActionId(),
 			action,
 		);
+	}
+	registerAction({
+		Action: ActionClass,
+		asCommand,
+		asRibbonIcon,
+	}: ActionRegistration): void {
+		const action = this.getActionOrCreate(ActionClass);
+
+		if (asCommand) {
+			this.pluginAddCommand(action.command(this.env));
+		}
+		if (asRibbonIcon) {
+			this.pluginAddRibbonIcon(...action.ribbonIcon(this.env));
+		}
+
+		this.actions.set(
+			action.getActionId(),
+			action,
+		);
+
+	}
+	registerActions(actions: ActionRegistration[]): void {
+		actions.forEach(({ Action: ActionClass, asCommand, asRibbonIcon }) => {
+			this.registerAction({
+				Action: ActionClass,
+				asCommand: asCommand,
+				asRibbonIcon: asRibbonIcon,
+			});
+		});
 	}
 	clear(): void {
 		this.actions.clear();
