@@ -1,6 +1,5 @@
-import { SimpleSearchWithOpenFile } from "notes_search/simple_with_open_search";
 import { Env } from "note_commands/env";
-import { App, Editor, EditorPosition, MarkdownView, TFile, moment } from "obsidian";
+import { App, Editor, EditorPosition, MarkdownView, TFile, moment, Vault } from "obsidian";
 
 /**
  * Fetched all markdown files content
@@ -89,6 +88,13 @@ export function getCursorPositionType(cursorInfo: CursorInfo): string {
 	}
 }
 
+/**
+ * Extracts leading part from the line
+ *
+ * returns [leadingPart, contentPart]
+ *
+ * if there is no leading part, return ["", contentPart]
+ */
 export function extractLeadingPart(line: string): [string, string] {
 	// Match leading whitespace and optional dashes or spaces
 	const match = line.match(/^(\s*[-\s]*)/);
@@ -130,6 +136,7 @@ export function extractLine(
 			content = lines.slice(1).join('\n');
 			currentLine = editor.getLine(cursorFrom.line);
 			[leadingPart, linkTitle] = extractLeadingPart(currentLine);
+			linkTitle = linkTitle.trim();
 			break;
 		case 'single-line-selection':
 			// - something parent line
@@ -144,6 +151,7 @@ export function extractLine(
 		case 'position':
 			currentLine = editor.getLine(cursorFrom.line);
 			[leadingPart, linkTitle] = extractLeadingPart(currentLine);
+			linkTitle = linkTitle.trim();
 			break;
 	}
 
@@ -172,6 +180,15 @@ export function getLineInfo(editor: Editor): LineInfo {
 	};
 }
 
+export function fillNoteLinkTemplate(
+	noteLinkTemplate: string,
+	link: string,
+	header: string,
+): string {
+	return noteLinkTemplate
+		.replace('{{noteNewTitle}}', header)
+		.replace('{{noteNewLink}}', link);
+}
 
 export function formatLinkInParent(
 	lineParentNoteTemplate: string,
@@ -186,9 +203,11 @@ export function formatLinkInParent(
 	//     - something another   |  line
 	//         - and another one <  selection
 	//
-	const linkInParentNote = lineParentNoteTemplate
-		.replace('{{noteNewTitle}}', lineInfo.lineParts.title)
-		.replace('{{noteNewLink}}', linkNewNote)
+	const linkInParentNote = fillNoteLinkTemplate(
+		lineParentNoteTemplate,
+		linkNewNote,
+		lineInfo.lineParts.title,
+	);
 	let lineContent = '';
 	switch (lineInfo.type) {
 		// function extractLine explains differences
@@ -303,10 +322,13 @@ export function fillFileNewContent(
 export function getMarkerPositionAndClear(
 	editor: Editor,
 	filledFileContent: string,
-): [EditorPosition, string] {
+): [EditorPosition | undefined, string] {
 	const cursorMarker = '{{|}}';
 	const placeholderOffset = filledFileContent.indexOf(cursorMarker);
 	const fileContentFinal = filledFileContent.replace(cursorMarker, '');
+	if (placeholderOffset === -1) {
+		return [undefined, fileContentFinal];
+	}
 	const markerPosition = editor.offsetToPos(placeholderOffset);
 	return [markerPosition, fileContentFinal];
 }
@@ -318,4 +340,158 @@ export function clearSelectedText(editor: Editor, lineInfo: LineInfo): void {
 			lineInfo.cursorInfo.from,
 			lineInfo.cursorInfo.to,
 		);
+}
+
+export class ExtensionAbsentError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'ExtensionAbsentError'; // Custom name for the error type
+	}
+}
+
+/**
+ * Checks if provided file name template is valid
+ * 
+ * @throws {ExtensionAbsentError} If template don't have an extension
+*/
+export function checkFileNameTemplate(fileNameTemplate: string): void {
+	const extensionsToCheck = ['.txt', '.md'];
+	const containsExtensions = extensionsToCheck
+		.some(
+			extension => fileNameTemplate.includes(
+				extension));
+	if (!containsExtensions) {
+		throw new ExtensionAbsentError(
+			'Check filename template for the handy notes plugin, no extension',
+		);
+	}
+}
+
+export class FileExistError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'FileExistError'; // Custom name for the error type
+	}
+}
+
+/**
+ * Checks if provided filepath is exist
+ * 
+ * @throws {FileExistError} if file path already exists
+*/
+export function fileExists(vault: Vault, path: string) {
+	const isExist = vault.getFileByPath(path);
+	if (isExist) {
+		throw new FileExistError(`File ${path} already exists`);
+	}
+}
+
+interface FileInfo {
+	file: TFile,
+	filePath: string,
+	markerPosition: EditorPosition | undefined,
+}
+
+/**
+ * Creates a new note using templates from the settings
+ * 
+ * @throws {FileExistError} if the new note file path already exists
+ * @throws {ExtensionAbsentError} If the file name template don't have an extension
+*/
+export async function createNewNoteFromTemplate(env: Env, editor: Editor): Promise<FileInfo> {
+	const noteTemplate = env.settings.fileNewTemplate;
+	const fileNameNewTemplate = env.settings.fileNameTemplate;
+	const noteLinkInParentTemplate = env.settings.lineParentNoteTemplate;
+
+	// throws on check fail
+	checkFileNameTemplate(fileNameNewTemplate);
+
+	const parentInfo = getParentNoteInfo(env, editor);
+	const lineInfo = getLineInfo(editor);
+
+	const fileNameNew = formatFileNameNew(
+		fileNameNewTemplate,
+		lineInfo.lineParts.title,
+	);
+
+	const filledFileContent = fillFileNewContent(
+		noteTemplate,
+		env.settings.contentNewTemplate,
+		lineInfo,
+		parentInfo,
+	);
+
+	const [markerPosition, fileContentFinal] = getMarkerPositionAndClear(
+		editor,
+		filledFileContent,
+	);
+
+	// throws on check fail
+	fileExists(env.vault, fileNameNew);
+
+	const fileNew = await env.vault.create(fileNameNew, fileContentFinal);
+	const fileLinkNew = env.fileManager.generateMarkdownLink(fileNew, fileNew.path);
+
+	const lineInParentNote = formatLinkInParent(
+		noteLinkInParentTemplate,
+		lineInfo,
+		fileLinkNew,
+	);
+
+	clearSelectedText(editor, lineInfo);
+
+	editor.setLine(
+		lineInfo.cursorInfo.from.line,
+		lineInParentNote,
+	);
+	return {
+		file: fileNew,
+		filePath: fileNameNew,
+		markerPosition: markerPosition,
+	};
+}
+
+/**
+ * Creates a new empty note 
+ * 
+ * @throws {FileExistError} if the new note file path already exists
+ * @throws {ExtensionAbsentError} If the file name template don't have an extension
+*/
+export async function createNewEmptyNote(env: Env, editor: Editor): Promise<FileInfo> {
+	const fileNameNewTemplate = env.settings.fileNameTemplate;
+	const noteLinkInParentTemplate = env.settings.lineParentNoteTemplate;
+
+	// throws on check fail
+	checkFileNameTemplate(fileNameNewTemplate);
+
+	const lineInfo = getLineInfo(editor);
+
+	const fileNameNew = formatFileNameNew(
+		fileNameNewTemplate,
+		lineInfo.lineParts.title,
+	);
+
+	// throws on check fail
+	fileExists(env.vault, fileNameNew);
+
+	const fileNew = await env.vault.create(fileNameNew, '');
+	const fileLinkNew = env.fileManager.generateMarkdownLink(fileNew, fileNew.path);
+
+	const lineInParentNote = formatLinkInParent(
+		noteLinkInParentTemplate,
+		lineInfo,
+		fileLinkNew,
+	);
+
+	clearSelectedText(editor, lineInfo);
+
+	editor.setLine(
+		lineInfo.cursorInfo.from.line,
+		lineInParentNote,
+	);
+	return {
+		file: fileNew,
+		filePath: fileNameNew,
+		markerPosition: undefined,
+	};
 }

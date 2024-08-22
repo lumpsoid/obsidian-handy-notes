@@ -2,34 +2,71 @@ import { Command } from "obsidian";
 import { BaseNoteAction } from "./base_note_action";
 import { Env } from "./env";
 
+interface ActionRegistryOptions {
+	env: Env;
+	addCommand: (command: Command) => Command;
+	addRibbonIcon: (
+		icon: string,
+		title: string,
+		callback: (evt: MouseEvent) => any,
+	) => HTMLElement;
+}
 
 export class NoteActionRegistry {
-    private actions: Map<string, BaseNoteAction> = new Map();
+	private actions: Map<string, BaseNoteAction> = new Map();
 
-	public env: Env;
+	private env: Env;
 	private pluginAddCommand: (command: Command) => Command;
+	private pluginAddRibbonIcon: (
+		icon: string,
+		title: string,
+		callback: (evt: MouseEvent) => any,
+	) => HTMLElement;
 
-    constructor(
-		env: Env, 
-		pluginAddCommand: (command: Command) => Command,
-	){
-        this.env = env;
-		this.pluginAddCommand = pluginAddCommand;
-    }
+	constructor({
+		env,
+		addCommand,
+		addRibbonIcon,
+	}: ActionRegistryOptions) {
+		this.env = env;
+		this.pluginAddCommand = addCommand;
+		this.pluginAddRibbonIcon = addRibbonIcon;
+	}
 
 	// Register a command by creating it with the provided Env instance
-    registerCommand(CommandClass: new () => BaseNoteAction) {
-        const commandInstance = new CommandClass();
+	registerCommand(CommandClass: new () => BaseNoteAction) {
+		const action = this.getActionOrCreate(CommandClass);
 
-		this.pluginAddCommand(commandInstance.command(this.env));
+		this.pluginAddCommand(action.command(this.env));
 
-        this.actions.set(
-			commandInstance.getActionId(),
-			commandInstance,
+		this.actions.set(
+			action.getActionId(),
+			action,
 		);
-    }
-    getAction(id: string): BaseNoteAction | undefined {
-        return this.actions.get(id);
-    }
+	}
+	registerRibbonIcon(CommandClass: new () => BaseNoteAction) {
+		const action = this.getActionOrCreate(CommandClass);
+		this.pluginAddRibbonIcon(...action.ribbonIcon(this.env));
+
+		this.actions.set(
+			action.getActionId(),
+			action,
+		);
+	}
+	getActionOrCreate(actionClass: new () => BaseNoteAction): BaseNoteAction {
+		let action = this.getAction(BaseNoteAction.COMMAND_ID);
+		if (action === undefined) {
+			action = new actionClass();
+		}
+		return action;
+	}
+
+	getAction(id: string): BaseNoteAction | undefined {
+		return this.actions.get(id);
+	}
+
+	clear(): void {
+		this.actions.clear();
+	}
 }
 

@@ -1,0 +1,73 @@
+import {
+	SuggestModal,
+	App,
+} from 'obsidian';
+
+export class SelectNotesLine extends SuggestModal<string> {
+	private noteLines: string[];
+	private onSelect: (line: string) => void;
+	private currentQuery: string;
+
+	constructor(
+		app: App,
+		noteContent: string,
+		placeholder: string | undefined,
+		completion: (line: string) => void
+	) {
+		super(app);
+		this.noteLines = noteContent.split('\n');
+		this.onSelect = completion;
+		this.emptyStateText = "File is empty";
+		placeholder = placeholder ?? "";
+		this.setPlaceholder(`${placeholder} (first 2 symbols will not trigger)`);
+	}
+
+	onOpen() {
+		//super.onOpen();
+		const appendButton = createEl('button', { text: 'at the end' });
+		appendButton.addEventListener(
+			'click',
+			() => {
+				const line = this.noteLines.at(-1);
+				if (line) {
+					this.onSelect(line);
+				}
+				this.close();
+			},
+		);
+		this.inputEl.appendChild(appendButton);
+		const { contentEl } = this;
+		contentEl.createEl("h1", { text: "What's your name?" });
+
+		const event = new Event("input");
+		this.inputEl.dispatchEvent(event);
+	}
+
+	onClose(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
+
+
+	getItems(): string[] {
+		return this.noteLines;
+	}
+
+	getSuggestions(query: string): string[] {
+		return this.getItems().filter((line) =>
+			line.toLowerCase().includes(query.toLowerCase())
+		);
+	}
+
+	renderSuggestion(value: string, el: HTMLElement) {
+		// Replace the query with bolded query in the escaped value
+		const result = value.replace(new RegExp(`(${this.currentQuery})`, 'gi'), `<b>$1</b>`);
+
+		// Set the inner HTML of the element
+		el.innerHTML = result;
+	}
+
+	onChooseSuggestion(item: string, evt: MouseEvent | KeyboardEvent) {
+		this.onSelect(item);
+	}
+}
