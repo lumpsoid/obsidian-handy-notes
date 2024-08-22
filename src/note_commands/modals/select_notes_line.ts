@@ -15,7 +15,7 @@ export class SelectNotesLine extends SuggestModal<string> {
 		completion: (line: string) => void
 	) {
 		super(app);
-		this.noteLines = noteContent.split('\n');
+		this.noteLines = noteContent.replace(/\s+$/, '').split('\n');
 		this.onSelect = completion;
 		this.emptyStateText = "File is empty";
 		placeholder = placeholder ?? "";
@@ -23,22 +23,20 @@ export class SelectNotesLine extends SuggestModal<string> {
 	}
 
 	onOpen() {
-		//super.onOpen();
-		const appendButton = createEl('button', { text: 'at the end' });
-		appendButton.addEventListener(
-			'click',
-			() => {
-				const line = this.noteLines.at(-1);
-				if (line) {
-					this.onSelect(line);
-				}
-				this.close();
+		const appendButton = this.modalEl.createEl(
+			'button',
+			{
+				text: 'to the end',
+				prepend: true,
 			},
 		);
-		this.inputEl.appendChild(appendButton);
-		const { contentEl } = this;
-		contentEl.createEl("h1", { text: "What's your name?" });
-
+		appendButton.addEventListener('click', () => {
+			const line = this.noteLines.at(-1);
+			if (line !== undefined) {
+				this.onSelect(line);
+				this.close();
+			}
+		});
 		const event = new Event("input");
 		this.inputEl.dispatchEvent(event);
 	}
@@ -54,6 +52,7 @@ export class SelectNotesLine extends SuggestModal<string> {
 	}
 
 	getSuggestions(query: string): string[] {
+		this.currentQuery = query;
 		return this.getItems().filter((line) =>
 			line.toLowerCase().includes(query.toLowerCase())
 		);

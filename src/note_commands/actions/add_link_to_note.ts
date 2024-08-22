@@ -16,7 +16,7 @@ export class AddLinkToNote extends BaseNoteAction {
 	}
 
 	getActionIcon(): string {
-		return 'between-horizontal-start';
+		return 'arrow-up-from-line';
 	}
 
 	public async action(env: Env, editor: Editor): Promise<void> {
@@ -38,7 +38,6 @@ export class AddLinkToNote extends BaseNoteAction {
 							parentInfo.markdownLink,
 							parentInfo.headerClean,
 						);
-						console.log(linkComposed);
 
 						const [leadingPart, _] = extractLeadingPart(line);
 						const noteContentUpdated = selectedNoteContent.replace(
