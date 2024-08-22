@@ -32,7 +32,16 @@ export class NoteActionRegistry {
 		this.pluginAddCommand = addCommand;
 		this.pluginAddRibbonIcon = addRibbonIcon;
 	}
-
+	getAction(id: string): BaseNoteAction | undefined {
+		return this.actions.get(id);
+	}
+	getActionOrCreate(actionClass: new () => BaseNoteAction): BaseNoteAction {
+		let action = this.getAction(BaseNoteAction.COMMAND_ID);
+		if (action === undefined) {
+			action = new actionClass();
+		}
+		return action;
+	}
 	// Register a command by creating it with the provided Env instance
 	registerCommand(CommandClass: new () => BaseNoteAction) {
 		const action = this.getActionOrCreate(CommandClass);
@@ -53,18 +62,6 @@ export class NoteActionRegistry {
 			action,
 		);
 	}
-	getActionOrCreate(actionClass: new () => BaseNoteAction): BaseNoteAction {
-		let action = this.getAction(BaseNoteAction.COMMAND_ID);
-		if (action === undefined) {
-			action = new actionClass();
-		}
-		return action;
-	}
-
-	getAction(id: string): BaseNoteAction | undefined {
-		return this.actions.get(id);
-	}
-
 	clear(): void {
 		this.actions.clear();
 	}
