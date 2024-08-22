@@ -1,19 +1,17 @@
 import { Plugin, Notice } from 'obsidian';
 import { DEFAULT_SETTINGS, HandyPluginSettings } from 'handy_settings/default_settings';
 import { HandySettingTab } from 'handy_settings/handy_settings';
-import { SearchRegistry } from 'notes_search/search_registry';
-import { SimpleSearchWithInsertLink } from 'notes_search/simple_with_insert_link_search';
-import { SimpleSearchWithOpenFile } from 'notes_search/simple_with_open_search';
-import { SimpleSearchWithInsertHeaderLink } from 'notes_search/simple_search_with_insert_header_link';
-import { NoteActionRegistry } from 'note_commands/command_registry';
-import { NewNoteWithOpenAction } from 'note_commands/actions/new_note_with_open_action';
-import { NewNoteWithoutOpenAction } from 'note_commands/actions/new_note_without_open_action';
-import { AddLinkToNote } from 'note_commands/actions/add_link_to_note';
+import { FindAndOpenAction } from 'note_actions/actions/find_and_open_action';
+import { NoteActionRegistry } from 'note_actions/command_registry';
+import { NewNoteWithOpenAction } from 'note_actions/actions/new_note_with_open_action';
+import { NewNoteWithoutOpenAction } from 'note_actions/actions/new_note_without_open_action';
+import { AddLinkToNote } from 'note_actions/actions/add_link_to_note';
+import { FindWithInsertLink } from 'note_actions/actions/simple_with_insert_link_search';
+import { FindWithInsertHeaderLink } from 'note_actions/actions/find_with_insert_header_link';
 
 export default class HandyNotesPlugin extends Plugin {
 	settings: HandyPluginSettings;
 	noteActionRegistry: NoteActionRegistry;
-	searchRegistry: SearchRegistry;
 
 	async onload() {
 		await this.loadSettings();
@@ -33,6 +31,11 @@ export default class HandyNotesPlugin extends Plugin {
 		this.noteActionRegistry.registerActions(
 			[
 				{
+					Action: FindAndOpenAction,
+					asCommand: true,
+					asRibbonIcon: true,
+				},
+				{
 					Action: NewNoteWithOpenAction,
 					asCommand: true,
 					asRibbonIcon: true,
@@ -46,22 +49,16 @@ export default class HandyNotesPlugin extends Plugin {
 					asCommand: true,
 					asRibbonIcon: true,
 				},
+				{
+					Action: FindWithInsertHeaderLink,
+					asCommand: true,
+				},
+				{
+					Action: FindWithInsertLink,
+					asCommand: true,
+				},
 			],
 		);
-
-		// search actions
-		this.searchRegistry = new SearchRegistry(
-			this.app,
-			this.addCommand.bind(this),
-			this.addRibbonIcon.bind(this),
-		);
-
-		this.searchRegistry.registerCommand(SimpleSearchWithOpenFile);
-		this.searchRegistry.registerRibbonIcon(SimpleSearchWithOpenFile);
-
-		this.searchRegistry.registerCommand(SimpleSearchWithInsertLink);
-
-		this.searchRegistry.registerCommand(SimpleSearchWithInsertHeaderLink);
 
 		this.addSettingTab(new HandySettingTab(this.app, this));
 
@@ -78,7 +75,7 @@ export default class HandyNotesPlugin extends Plugin {
 	}
 
 	onunload() {
-
+		this.noteActionRegistry.clear();
 	}
 
 	async loadSettings() {

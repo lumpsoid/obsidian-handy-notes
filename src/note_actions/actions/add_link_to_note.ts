@@ -1,5 +1,5 @@
-import { SimpleNotesSearch } from "notes_search/modals/simple_notes_search";
-import { SelectNotesLine } from "note_commands/modals/select_notes_line";
+import { SimpleNotesSearch } from "note_actions/modals/simple_notes_search";
+import { SelectNotesLine } from "note_actions/modals/select_notes_line";
 import { Editor, } from "obsidian";
 import { getParentNoteInfo, getAllNotesWithContent, extractLeadingPart, fillNoteLinkTemplate } from "utils";
 import { BaseNoteAction } from "../base_note_action";
