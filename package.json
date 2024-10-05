@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-handy-notes",
+	"name": "handy-notes",
 	"version": "0.5.0",
 	"description": "Handy commands for writting flow",
 	"main": "main.js",
