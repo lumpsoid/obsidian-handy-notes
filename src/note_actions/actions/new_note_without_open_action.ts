@@ -1,5 +1,5 @@
-import { Editor, Notice } from "obsidian";
-import { ExtensionAbsentError, FileExistError, createNewNoteFromTemplate } from "utils";
+import { Notice } from "obsidian";
+import { ExtensionAbsentError, FileExistError, createNewNoteFromTemplate, getEditor } from "utils";
 import { BaseNoteAction } from "../base_note_action";
 import { Env } from "../env";
 
@@ -7,7 +7,7 @@ export class NewNoteWithoutOpenAction extends BaseNoteAction {
 	static COMMAND_ID = 'new-note-without-open-action';
 
 	getActionId(): string {
-		return 'new-note-without-open-action';
+		return NewNoteWithoutOpenAction.COMMAND_ID;
 	}
 	getActionName(): string {
 		return 'Create new note without open';
@@ -17,8 +17,13 @@ export class NewNoteWithoutOpenAction extends BaseNoteAction {
 		return 'git-branch-plus';
 	}
 
-	public async action(env: Env, editor: Editor): Promise<void> {
+	public async action(env: Env): Promise<void> {
 		try {
+			const editor = getEditor(env.app);
+			if (!editor) {
+				new Notice('No active file');
+				return;
+			}
 			createNewNoteFromTemplate(env, editor);
 		} catch (e) {
 			if (e instanceof ExtensionAbsentError) {

@@ -24,7 +24,7 @@ export class SimpleFuzzyNotesSearch extends FuzzySuggestModal<string> {
 		this.initialQuery = initialQuery ?? "";
 		this.notes = notes;
 		this.completion = completion;
-		this.emptyStateText = "No zettels found";
+		this.emptyStateText = "No notes found";
 		placeholder = placeholder ?? "";
 		this.setPlaceholder(`${placeholder} (first 3 symbols will not trigger)`);
 	}
@@ -34,7 +34,6 @@ export class SimpleFuzzyNotesSearch extends FuzzySuggestModal<string> {
 		this.inputEl.value = this.initialQuery;
 		const event = new Event("input");
 		this.inputEl.dispatchEvent(event);
-		console.log("we here?");
 	}
 
 
@@ -47,7 +46,6 @@ export class SimpleFuzzyNotesSearch extends FuzzySuggestModal<string> {
 	}
 
 	getSuggestions(query: string): FuzzyMatch<string>[] {
-		console.log("got query: ", query);
 		if (query.length <= 3) {
 			return [];
 		}

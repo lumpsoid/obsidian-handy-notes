@@ -3,14 +3,14 @@ import { SimpleNotesSearch } from "../modals/simple_notes_search";
 import { BaseNoteAction } from "note_actions/base_note_action";
 import { Env } from "note_actions/env";
 
-export class FindAndOpenAction extends BaseNoteAction {
-	static COMMAND_ID: string = 'simple-with-open-search';
+export class SearchAndOpenAction extends BaseNoteAction {
+	static COMMAND_ID: string = 'search-and-open-note';
 
 	public getActionId(): string {
-		return FindAndOpenAction.COMMAND_ID;
+		return SearchAndOpenAction.COMMAND_ID;
 	}
 	public getActionName(): string {
-		return 'Simple search with open file'
+		return 'Search and open file'
 	}
 	public getActionIcon(): string {
 		return 'external-link'

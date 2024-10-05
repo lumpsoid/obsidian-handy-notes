@@ -1,25 +1,30 @@
 import { SimpleNotesSearch } from "note_actions/modals/simple_notes_search";
 import { SelectNotesLine } from "note_actions/modals/select_notes_line";
-import { Editor, } from "obsidian";
-import { getParentNoteInfo, getAllNotesWithContent, extractLeadingPart, fillNoteLinkTemplate } from "utils";
+import { Notice, } from "obsidian";
+import { getParentNoteInfo, getAllNotesWithContent, extractLeadingPart, fillNoteLinkTemplate, getEditor } from "utils";
 import { BaseNoteAction } from "../base_note_action";
 import { Env } from "../env";
 
-export class AddLinkToNote extends BaseNoteAction {
-	static COMMAND_ID = 'add-link-to-note-action';
+export class SearchAndAppendNote extends BaseNoteAction {
+	static COMMAND_ID = 'search-and-append-link';
 
 	getActionId(): string {
-		return 'add-link-to-note-action';
+		return SearchAndAppendNote.COMMAND_ID;
 	}
 	getActionName(): string {
-		return 'Add link to note';
+		return 'Add current note link to selected note';
 	}
 
 	getActionIcon(): string {
 		return 'arrow-up-from-line';
 	}
 
-	public async action(env: Env, editor: Editor): Promise<void> {
+	public async action(env: Env): Promise<void> {
+		const editor = getEditor(env.app);
+		if (!editor) {
+			new Notice('No active file');
+			return;
+		}
 		const parentInfo = getParentNoteInfo(env, editor);
 		new SimpleNotesSearch(
 			env.app,

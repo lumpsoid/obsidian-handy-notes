@@ -1,5 +1,4 @@
-import { Editor, Command, Notice } from "obsidian";
-import { getEditor } from "utils";
+import { Command} from "obsidian";
 import { Env } from "./env";
 
 
@@ -8,15 +7,14 @@ export abstract class BaseNoteAction {
 	constructor() { };
 
 	public abstract getActionId(): string;
-	public abstract getActionName(): string;
-	public abstract getActionIcon(): string;
+	public abstract getActionName(): string; public abstract getActionIcon(): string;
 	public command(env: Env): Command {
 		return {
 			id: this.getActionId(),
 			name: this.getActionName(),
 			icon: this.getActionIcon(),
-			editorCallback: async (editor: Editor) => {
-				await this.action(env, editor);
+			callback: async () => {
+				await this.action(env);
 			},
 		};
 	}
@@ -24,16 +22,11 @@ export abstract class BaseNoteAction {
 		const icon = this.getActionIcon();
 		const title = this.getActionName();
 		const callback = () => {
-			const editor = getEditor(env.app);
-			if (editor === undefined) {
-				new Notice('No editor available');
-				return;
-			}
-			this.action(env, editor);
+			this.action(env);
 			return;
 		};
 		return [icon, title, callback];
 	}
-	public abstract action(env: Env, editor: Editor): Promise<void>;
+	public abstract action(env: Env): Promise<void>;
 }
 

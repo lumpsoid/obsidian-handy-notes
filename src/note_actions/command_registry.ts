@@ -76,8 +76,9 @@ export class NoteActionRegistry {
 		const action = this.getActionOrCreate(ActionClass);
 
 		if (asCommand) {
-			this.pluginAddCommand(action.command(this.env));
+			this.pluginAddCommand(action.command(this.env)); 
 		}
+
 		if (asRibbonIcon) {
 			this.pluginAddRibbonIcon(...action.ribbonIcon(this.env));
 		}

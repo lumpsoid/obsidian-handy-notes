@@ -1,13 +1,7 @@
-import { Plugin, Notice } from 'obsidian';
+import { Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, HandyPluginSettings } from 'handy_settings/default_settings';
 import { HandySettingTab } from 'handy_settings/handy_settings';
-import { FindAndOpenAction } from 'note_actions/actions/find_and_open_action';
-import { NoteActionRegistry } from 'note_actions/command_registry';
-import { NewNoteWithOpenAction } from 'note_actions/actions/new_note_with_open_action';
-import { NewNoteWithoutOpenAction } from 'note_actions/actions/new_note_without_open_action';
-import { AddLinkToNote } from 'note_actions/actions/add_link_to_note';
-import { FindWithInsertLink } from 'note_actions/actions/simple_with_insert_link_search';
-import { FindWithInsertHeaderLink } from 'note_actions/actions/find_with_insert_header_link';
+import { NoteActionRegistry, SearchAndOpenAction, NewNoteWithOpenAction, NewNoteWithoutOpenAction, SearchWithInsertHeaderLink, SearchByHeaderAndInsertHeaderLink, SearchAndInsertLink, SearchByHeaderAndInsertLink } from 'note_actions';
 
 export default class HandyNotesPlugin extends Plugin {
 	settings: HandyPluginSettings;
@@ -31,30 +25,32 @@ export default class HandyNotesPlugin extends Plugin {
 		this.noteActionRegistry.registerActions(
 			[
 				{
-					Action: FindAndOpenAction,
+					Action: SearchAndOpenAction,
 					asCommand: true,
 					asRibbonIcon: true,
 				},
 				{
 					Action: NewNoteWithOpenAction,
 					asCommand: true,
-					asRibbonIcon: true,
 				},
 				{
 					Action: NewNoteWithoutOpenAction,
 					asCommand: true,
 				},
 				{
-					Action: AddLinkToNote,
-					asCommand: true,
-					asRibbonIcon: true,
-				},
-				{
-					Action: FindWithInsertHeaderLink,
+					Action: SearchAndInsertLink,
 					asCommand: true,
 				},
 				{
-					Action: FindWithInsertLink,
+					Action: SearchWithInsertHeaderLink,
+					asCommand: true,
+				},
+				{
+					Action: SearchByHeaderAndInsertLink,
+					asCommand: true,
+				},
+				{
+					Action: SearchByHeaderAndInsertHeaderLink,
 					asCommand: true,
 				},
 			],
@@ -64,14 +60,14 @@ export default class HandyNotesPlugin extends Plugin {
 
 		// for easy debug
 		// will create ribbon icon for plugin reload
-		this.addRibbonIcon('refresh-ccw', 'Reload', () => {
-			const pluginManager = this.app.plugins;
-
-			pluginManager.disablePlugin("obsidian-handy-notes");
-			pluginManager.enablePlugin("obsidian-handy-notes");
-
-			new Notice("Reloaded");
-		});
+		//this.addRibbonIcon('refresh-ccw', 'Reload', () => {
+		//	const pluginManager = this.app.plugins;
+		//
+		//	pluginManager.disablePlugin("obsidian-handy-notes");
+		//	pluginManager.enablePlugin("obsidian-handy-notes");
+		//
+		//	new Notice("Reloaded");
+		//});
 	}
 
 	onunload() {

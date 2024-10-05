@@ -18,6 +18,26 @@ export async function getAllNotesWithContent(app: App): Promise<Map<string, TFil
 	return notes;
 }
 
+/**
+ * Fetched all markdown files first header
+ * using vault cachedRead
+ *
+ * key is the first header
+ */
+export async function getAllNotesFirstHeader(app: App): Promise<Map<string, TFile>> {
+	const notes: Map<string, TFile> = new Map();
+	const markdownFiles = app.vault.getMarkdownFiles();
+	for (let i = 0; i < markdownFiles.length; i++) {
+		const note = markdownFiles[i];
+		const content = await app.vault.cachedRead(note);
+		const headerMatch = content.match(/^# (.+)/m);
+		if (headerMatch) {
+			notes.set(headerMatch[1], note);
+		}
+	}
+	return notes;
+}
+
 export function getEditor(app: App): Editor | undefined {
 	const view = app.workspace.getActiveViewOfType(MarkdownView);
 	// Make sure the user is editing a Markdown file.

@@ -21,9 +21,9 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 		super(app); this.initialQuery = initialQuery ?? "";
 		this.notes = notes;
 		this.completion = completion;
-		this.emptyStateText = "No zettels found";
+		this.emptyStateText = "Type more than 2 symbols";
 		placeholder = placeholder ?? "";
-		this.setPlaceholder(`${placeholder} (first 3 symbols will not trigger)`);
+		this.setPlaceholder(`${placeholder} (first 2 symbols will not trigger)`);
 	}
 
 	onOpen() {
@@ -33,6 +33,9 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 		this.inputEl.dispatchEvent(event);
 	}
 
+	onClose(): void {
+		this.notes.then((content) => content.clear());
+	}
 
 	async getItems(): Promise<string[]> {
 		const notes = await this.notes;
@@ -45,7 +48,8 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 
 	async getSuggestions(query: string): Promise<string[]> {
 		return new Promise<string[]>(async (resolve) => {
-			if (query.length <= 3) {
+			if (query.length <= 2) {
+				this.emptyStateText = "Type more than 2 symbols";
 				resolve([]);
 				return;
 			}
@@ -53,6 +57,8 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 			// Abort any ongoing search
 			if (this.abortController) {
 				this.abortController.abort();
+			} else {
+				this.emptyStateText = "Loading...";
 			}
 
 			// Create a new AbortController for the current search
@@ -67,6 +73,8 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 			let index = 0;
 
 			// Function to process items in chunks
+			// if it would be for loop,
+			// then it would block until all notes are processed
 			const processChunk = () => {
 				const chunkSize = 100; // Process 100 items per chunk
 				const end = Math.min(index + chunkSize, notes.length);
@@ -78,7 +86,7 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 					}
 
 					const text = notes[index];
-					if (text.includes(query, 1)) {
+					if (text.match(query)) {
 						results.push(text);
 					}
 				}
@@ -87,18 +95,30 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 					// Continue processing the next chunk
 					requestAnimationFrame(processChunk);
 				} else {
+					if (results.length == 0) {
+						this.emptyStateText = "No notes was founded";
+					}
+					// Sort results by the position of the query in each string
+					results.sort((a, b) => {
+						const indexA = a.indexOf(query);
+						const indexB = b.indexOf(query);
+						return indexA - indexB;
+					});
 					resolve(results);
 				}
 			};
 
-			// Start processing the first chunk
+			// Start processing from the first chunk
 			processChunk();
 		});
 	}
 
 	renderSuggestion(value: string, el: HTMLElement) {
 		// Replace the query with bolded query in the escaped value
-		const result = value.replace(new RegExp(`(${this.currentQuery})`, 'gi'), `<b>$1</b>`);
+		const result = value.replace(
+			new RegExp(`(${this.currentQuery})`, 'gi'),
+			`<b>$1</b>`,
+		);
 
 		// Set the inner HTML of the element
 		el.innerHTML = result;
