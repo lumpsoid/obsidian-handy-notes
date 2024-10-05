@@ -4,8 +4,7 @@
 	"version": "0.5.0",
 	"minAppVersion": "0.15.0",
 	"description": "Handy commands for writting flow.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"author": "lumpsoid",
+	"authorUrl": "https://github.com/lumpsoid/",
 	"isDesktopOnly": false
 }
