@@ -15,13 +15,38 @@ export class HandySettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		const filenameTemplateDescription = new DocumentFragment();
-		let filenameTemplateText = document.createElement('span')
-		filenameTemplateText.innerHTML = `New note will be created with the specified filename template. The content of the field will be trimmed before use.<br><br>
-		Available variables:<br>
-		- {{date}}: timestamp format, refer to <a hrep="https://momentjs.com/docs/#/displaying/format/">format reference</a><br>
-		- {{titleNew}}: the first line of the selected text when the command was invoked<br>`;
-		filenameTemplateDescription.appendChild(filenameTemplateText);
+		const filenameTemplateDescription = new DocumentFragment()
+		filenameTemplateDescription.createSpan(
+			{}, (desc) => {
+				desc.createEl('p', {
+					text: 'New note will be created with the specified filename template. The content of the field will be trimmed before use.'
+				})
+				desc.createEl('p', {
+					text: 'Available variables:'
+				})
+				desc.createEl('p', {}, (pdate) => {
+					pdate.appendText('- ')
+					// Create a bold pdateement for {{date}}
+					pdate.createEl('b', {
+						text: '{{date}}'
+					});
+					pdate.appendText(': timestamp format, refer to ');
+
+					// Create and append the link
+					pdate.createEl('a', {
+						href: 'https://momentjs.com/docs/#/displaying/format/',
+						text: 'format reference'
+					});
+				})
+				desc.createEl('p', {},
+					(ptitle) => {
+						ptitle.appendText('- ');
+						ptitle.createEl('b', { text: '{{titleNew}}' });
+						ptitle.appendText(': the first line of the selected text when the command was invoked');
+					},
+				);
+			}
+		);
 		new Setting(containerEl)
 			.setName('New note filename template')
 			.setDesc(filenameTemplateDescription)
@@ -38,12 +63,20 @@ export class HandySettingTab extends PluginSettingTab {
 			});
 
 		const linkTemplateDescription = new DocumentFragment();
-		let linkTemplateText = document.createElement('span')
-		linkTemplateText.innerHTML = `The link will be inserted in the parent note<br><br>
-		Available variables:<br>
-		- {{noteNewLink}}<br>
-		- {{noteNewTitle}}<br>`;
-		linkTemplateDescription.appendChild(linkTemplateText);
+		linkTemplateDescription.createSpan({},
+			(desc) => {
+				desc.createEl('p', { text: 'The link will be inserted in the parent note' });
+				desc.createEl('p', { text: 'Available variables:' });
+				desc.createEl('p', {}, (el) => {
+					el.appendText('- ');
+					el.createEl('b', { text: '{{noteNewLink}}' });
+				});
+				desc.createEl('p', {}, (el) => {
+					el.appendText('- ');
+					el.createEl('b', { text: '{{noteNewTitle}}' });
+				});
+			},
+		);
 		new Setting(containerEl)
 			.setName('New note link template')
 			.setDesc(linkTemplateDescription)
@@ -60,16 +93,37 @@ export class HandySettingTab extends PluginSettingTab {
 			});
 
 		const fileTemplateDescription = new DocumentFragment();
-		let fileTemplateText = document.createElement('span')
-		fileTemplateText.innerHTML = `Template for the new note<br><br>
-		Available variables:<br>
-		- {{title}}: the first line of the text where the command was invoked<br>
-		- {{content}}: other lines of the text selected when the command was invoked<br>
-		- {{parentLink}}: the link of the parent note, where command was invoked<br>
-		- {{parentHeader}}: the header of the parent note, where command was invoked<br>
-		- {{|}}: the position of the cursor after opening the new note
-		`;
-		fileTemplateDescription.appendChild(fileTemplateText);
+		fileTemplateDescription.createSpan({},
+			(desc) => {
+				desc.appendText('Template for the new note');
+				desc.createEl('p', { text: 'Available variables:' });
+				desc.createEl('p', {}, (el) => {
+					el.appendText('- ');
+					el.createEl('b', { text: '{{title}}' });
+					el.appendText(': the first line of the text where the command was invoked');
+				});
+				desc.createEl('p', {}, (el) => {
+					el.appendText('- ');
+					el.createEl('b', { text: '{{content}}' });
+					el.appendText(': other lines of the text selected when the command was invoked');
+				});
+				desc.createEl('p', {}, (el) => {
+					el.appendText('- ');
+					el.createEl('b', { text: '{{parentLink}}' });
+					el.appendText(': the link of the parent note, where command was invoked');
+				});
+				desc.createEl('p', {}, (el) => {
+					el.appendText('- ');
+					el.createEl('b', { text: '{{parentHeader}}' });
+					el.appendText(': the header of the parent note, where command was invoked');
+				});
+				desc.createEl('p', {}, (el) => {
+					el.appendText('- ');
+					el.createEl('b', { text: '{{|}}' });
+					el.appendText(': the position of the cursor after opening the new note');
+				});
+			},
+		);
 		new Setting(containerEl)
 			.setName('New file template')
 			.setDesc(fileTemplateDescription)
