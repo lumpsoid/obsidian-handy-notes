@@ -58,17 +58,16 @@ export class SimpleFuzzyNotesSearch extends FuzzySuggestModal<string> {
 		const signal = this.abortController.signal;
 
 		query = query.trim();
+		let results = [];
 		for (
 			let initialItems = this.getItems(),
 			//n = prepareQuery(query), 
 			executeSearch = prepareSimpleSearch(query),
-			results = [],
 			index = 0;
 			index < initialItems.length;
 			index++
 		) {
 			if (signal.aborted) {
-				console.log("query was aborted: ", query);
 				return results;
 			}
 
@@ -80,7 +79,6 @@ export class SimpleFuzzyNotesSearch extends FuzzySuggestModal<string> {
 				item: item
 			})
 		}
-		console.log("query completed: ", query);
 		return sortSearchResults(results),
 			results
 	}
