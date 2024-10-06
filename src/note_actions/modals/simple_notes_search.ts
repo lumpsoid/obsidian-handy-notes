@@ -33,10 +33,6 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 		this.inputEl.dispatchEvent(event);
 	}
 
-	onClose(): void {
-		this.notes.then((content) => content.clear());
-	}
-
 	async getItems(): Promise<string[]> {
 		const notes = await this.notes;
 		return Array.from(notes.keys());
