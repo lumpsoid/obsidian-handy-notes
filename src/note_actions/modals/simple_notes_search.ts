@@ -110,14 +110,19 @@ export class SimpleNotesSearch extends SuggestModal<string> {
 	}
 
 	renderSuggestion(value: string, el: HTMLElement) {
-		// Replace the query with bolded query in the escaped value
-		const result = value.replace(
-			new RegExp(`(${this.currentQuery})`, 'gi'),
-			`<b>$1</b>`,
-		);
+		// Split the value based on the current query
+		const parts = value.split(new RegExp(`(${this.currentQuery})`, 'gi'));
 
-		// Set the inner HTML of the element
-		el.innerHTML = result;
+		// Iterate over the parts and append them appropriately
+		parts.forEach(part => {
+			if (part.toLowerCase() === this.currentQuery.toLowerCase()) {
+				// If the part matches the query, create a bold element
+				el.createEl('b', { text: part });
+			} else {
+				// Otherwise, append the text as is
+				el.appendText(part);
+			}
+		});
 	}
 
 	async onChooseSuggestion(item: string, evt: MouseEvent | KeyboardEvent) {

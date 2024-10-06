@@ -59,11 +59,7 @@ export class SelectNotesLine extends SuggestModal<string> {
 	}
 
 	renderSuggestion(value: string, el: HTMLElement) {
-		// Replace the query with bolded query in the escaped value
-		const result = value.replace(new RegExp(`(${this.currentQuery})`, 'gi'), `<b>$1</b>`);
-
-		// Set the inner HTML of the element
-		el.innerHTML = result;
+		el.setText(value);
 	}
 
 	onChooseSuggestion(item: string, evt: MouseEvent | KeyboardEvent) {
