@@ -1,7 +1,7 @@
 import { Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, HandyPluginSettings } from 'handy_settings/default_settings';
 import { HandySettingTab } from 'handy_settings/handy_settings';
-import { NoteActionRegistry, SearchAndOpenAction, NewNoteWithOpenAction, NewNoteWithoutOpenAction, SearchWithInsertHeaderLink, SearchByHeaderAndInsertHeaderLink, SearchAndInsertLink, SearchByHeaderAndInsertLink } from 'note_actions';
+import { NoteActionRegistry, SearchAndOpenAction, SearchAndAppendNote, NewNoteWithOpenAction, NewNoteWithoutOpenAction, SearchWithInsertHeaderLink, SearchByHeaderAndInsertHeaderLink, SearchAndInsertLink, SearchByHeaderAndInsertLink } from 'note_actions';
 
 export default class HandyNotesPlugin extends Plugin {
 	settings: HandyPluginSettings;
@@ -28,6 +28,10 @@ export default class HandyNotesPlugin extends Plugin {
 					Action: SearchAndOpenAction,
 					asCommand: true,
 					asRibbonIcon: true,
+				},
+				{
+					Action: SearchAndAppendNote,
+					asCommand: true,
 				},
 				{
 					Action: NewNoteWithOpenAction,
