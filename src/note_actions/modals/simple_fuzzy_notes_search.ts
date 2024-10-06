@@ -59,7 +59,7 @@ export class SimpleFuzzyNotesSearch extends FuzzySuggestModal<string> {
 
 		query = query.trim();
 		for (
-			var initialItems = this.getItems(),
+			let initialItems = this.getItems(),
 			//n = prepareQuery(query), 
 			executeSearch = prepareSimpleSearch(query),
 			results = [],
@@ -72,7 +72,7 @@ export class SimpleFuzzyNotesSearch extends FuzzySuggestModal<string> {
 				return results;
 			}
 
-			var item = initialItems[index]
+			let item = initialItems[index]
 				//, s = fuzzySearch(n, this.getItemText(a));
 				, searchResult = executeSearch(this.getItemText(item));
 			searchResult && results.push({
