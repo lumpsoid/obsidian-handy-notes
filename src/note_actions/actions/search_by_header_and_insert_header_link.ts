@@ -11,7 +11,7 @@ export class SearchByHeaderAndInsertHeaderLink extends BaseNoteAction {
 		return SearchByHeaderAndInsertHeaderLink.COMMAND_ID;
 	}
 	public getActionName(): string {
-		return 'Search by header and insert link';
+		return 'Search by header and insert link with header';
 	}
 	public getActionIcon(): string {
 		return 'external-link';
